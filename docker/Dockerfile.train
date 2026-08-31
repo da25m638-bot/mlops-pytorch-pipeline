@@ -1,0 +1,25 @@
+# ── Stage 1: dependency layer ────────────────────────────────────────────────
+FROM python:3.10-slim AS base
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements/train.txt ./requirements/train.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements/train.txt
+
+FROM base AS training
+
+COPY src/      ./src/
+COPY configs/  ./configs/
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+RUN mkdir -p /app/data /app/checkpoints
+
+ENTRYPOINT ["python", "src/train.py"]
